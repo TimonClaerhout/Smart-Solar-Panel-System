@@ -1,5 +1,9 @@
+#include "MMA7660.h"
+
+MMA7660 accelerometer;
+
 // JUST FOR TESTING
-int incomingCommand = 5;
+int incomingCommand = 0;
 
 // MOTOR PINS
 int motor1pin1 = D13;
@@ -7,7 +11,12 @@ int motor1pin2 = D12;
 int motor2pin1 = D11;
 int motor2pin2 = D10;
 
-void setup() 
+// ACCELEROMETER
+int8_t x;
+int8_t y;
+int8_t z;
+
+void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -22,54 +31,33 @@ void setup()
 
 void loop()
 { 
-  Serial.println("Type the \"motor number\" you want!");
+  Serial.println("Type the \"radius\" you want!");
   while(Serial.available() <= 0);
-  incomingCommand = Serial.readString().ToInt();
+  incomingCommand = Serial.readString().toInt();
 
-  if (incomingCommand == 0)
-{
-  digitalWrite(motor1pin1, LOW);
-  digitalWrite(motor1pin2, LOW);
-  digitalWrite(motor2pin1, LOW);
-  digitalWrite(motor2pin2, LOW);
-}
-
-else if (incomingCommand == 1)
-{
-  digitalWrite(motor1pin1, HIGH);
-  digitalWrite(motor1pin2, LOW);
-  digitalWrite(motor2pin1, LOW);
-  digitalWrite(motor2pin2, LOW);
-}
-
-else if (incomingCommand == 2)
-{
-  digitalWrite(motor1pin1, LOW);
-  digitalWrite(motor1pin2, HIGH);
-  digitalWrite(motor2pin1, LOW);
-  digitalWrite(motor2pin2, LOW);
-}
-
-else if (incomingCommand == 3)
-{
-  digitalWrite(motor1pin1, LOW);
-  digitalWrite(motor1pin2, LOW);
-  digitalWrite(motor2pin1, HIGH);
-  digitalWrite(motor2pin2, LOW);
-}
-
-else if (incomingCommand == 4)
-{
-  digitalWrite(motor1pin1, LOW);
-  digitalWrite(motor1pin2, LOW);
-  digitalWrite(motor2pin1, LOW);
-  digitalWrite(motor2pin2, HIGH);
-}
-
-delay(1000);
-
-else 
-{
-  Serial.println("Not a valid command!");
-}
+  while(x != incomingCommand)
+    {
+      Serial.println(x);
+      Serial.println(incomingCommand);
+      if(x <= incomingCommand)
+      {
+        digitalWrite(motor1pin1, HIGH);
+        digitalWrite(motor1pin2, LOW);
+        digitalWrite(motor2pin1, LOW);
+        digitalWrite(motor2pin2, LOW);
+      }
+      else
+      {
+        digitalWrite(motor1pin1, LOW);
+        digitalWrite(motor1pin2, HIGH);
+        digitalWrite(motor2pin1, LOW);
+        digitalWrite(motor2pin2, LOW);
+      }
+      delay(100);
+      digitalWrite(motor1pin1, LOW);
+      digitalWrite(motor1pin2, LOW);
+      digitalWrite(motor2pin1, LOW);
+      digitalWrite(motor2pin2, LOW);
+      accelerometer.getXYZ(&x, &y, &z); 
+   }
 }
