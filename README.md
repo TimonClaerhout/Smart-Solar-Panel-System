@@ -15,7 +15,7 @@
 
 ![Concept](./img/Concept.PNG)
 
-We werken met een digitaal kompas ([BNO055](./img/kompas.PNG)) om het noorden te vinden hieruit kunnen we de zonnepanelen direct naar het oosten positioneren want daar komt de zon op. Hierdoor kan je ze plaatsen in welke richting je waar wilt.
+We werken met een digitaal kompas ([BNO055](./img/kompas.PNG)) om het noorden te vinden. Hieruit kunnen we de zonnepanelen direct naar het oosten positioneren, want daar komt de zon op. Hierdoor kan je ze plaatsen in welke richting je wilt.
 
 Via een [algoritme](algoritme_positie_zon.ino) bepalen we in welke hoek de zonnepanelen moeten staan.
 Dit heeft een afwijking van 10 graden wat niet voor een groot verlies zorgt.
@@ -28,7 +28,7 @@ Om de zonnepanelen te draaien zowel horizontaal als verticaal gebruiken we een L
 ## Sensors
 
 Bij onze zonnepanelen sluiten we allerlei sensoren aan, deze data visualeren we op Adafruit.
-Om de data door te sturen maken we gebruik van een ESP ([ESP8266](./img/ESP.PNG)) die een wifi module bevat die dit doorstuurd naar Adafruit.
+Om de data door te sturen, maken we gebruik van een ESP ([ESP8266](./img/ESP.PNG)) die een wifi module bevat die dit doorstuurt naar Adafruit.
 Hierdoor kunnen we op afstand via een GSM, computer, ... volgen in welke toestand de zonnepanelen zich bevinden.
 
 ![Foto Adafruit dashboard]()
