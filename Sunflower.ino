@@ -1,4 +1,4 @@
-// LIBRARIES
+// LIBRARYS
 #include <Wire.h>
 #include "MMA7660.h"
 #include "config.h"
@@ -7,14 +7,20 @@
 #include <WiFiUdp.h>
 #include <TimeLib.h>
 #include <Adafruit_INA260.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <Digital_Light_TSL2561.h>
 
 const long utcOffsetInSeconds = 7200;
+
+Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
+adafruit_bno055_offsets_t calibrationData;
 
 // Define NTP Client to get time
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "ntp.ugent.be", utcOffsetInSeconds); // UGent because KU Leuven doesn't work correctly
 
-MMA7660 accelerometer;
+MMA7660 accelemeter;
 
 // JUST FOR TESTING
 String incomingCommand = "0"; //NEEDED FOR MOTORS!
@@ -27,6 +33,7 @@ Adafruit_INA260 ina260B = Adafruit_INA260();
 int * Elevation_Azimuth;
 int elevation;
 int azimuth;
+int test_elevation = 30;
 
 // Internal memory
 int elevation_int;
@@ -34,6 +41,7 @@ int azimuth_int;
 
 // STANDARD VALUES FOR CORRECTION
 int elevation_corrected; //NEEDED FOR MOTORS! (LATER 3nd commit)
+float temp = 0;
 bool not_out_of_bounds = true; //NEEDED FOR MOTORS! (LATER 4nd commit)
 bool sun_to_low = false; //NEEDED FOR MOTORS! (Later maybe 4 or 5 commit)
 
@@ -44,7 +52,7 @@ int motor2pin1 = D11; //NEEDED FOR MOTORS!
 int motor2pin2 = D10; //NEEDED FOR MOTORS!
 
 // ADAFRUIT DELAY
-int adaDelay = 20000;
+int adaDelay = 50000;
 int previousTimeAda;
 
 // POSITIONING DELAY
@@ -60,15 +68,33 @@ bool SYNC = true;
 int secondDelay = 1000;
 int previousTimeSecond;
 
+// COMPASS CALIBRATION TIME
+int compassDelay = 50;
+int previousTimeCompass;
+
+//COMPASS
+int angleTowardsNorth;
+int indexCompass = 0;
+int compassValues[20];
+bool toMuchTheSame = false;
+bool inIf = false;
+bool rotating = false;
+bool CHRASHED = false;
 
 // ACCELEROMETER
 int8_t x; //NEEDED FOR MOTORS! (2nd commit)
 int8_t y; //NEEDED FOR MOTORS! (2nd commit)
 int8_t z; //NEEDED FOR MOTORS! (2nd commit)
 
+//relay reset compass
+bool START = true;
+int relayDelay = 10000; // tijd in minuten 
+int previousTimerelay;
+int relaycompass = D9; //NEEDED FOR resetting compass
+
 // WIFI CREDENTIALS
-const char *ssid     = "LAB_02.85";
-const char *password = "CONNECT2LAB";
+const char *ssid     = "jonckheere"; //"LAB_02.85";
+const char *password = "john-deere"; //"CONNECT2LAB";
 
 // TIME DEFINITIONS WITH NTP SERVER
 int hour_int = 0;
@@ -79,13 +105,39 @@ int day_int = 0;
 int year_int = 0;
 
 // LOCATION (NOW STATIC)
-float Lon=-3.217033*DEG_TO_RAD;
-float Lat=51.195140*DEG_TO_RAD;
+float Lon=3.055742*DEG_TO_RAD;
+float Lat=51.141309*DEG_TO_RAD;
 
 void setup() {
   // put your setup code here, to run once:
-  accelerometer.init();
+  pinMode(relaycompass, OUTPUT); // NEEDED FOR resetting compass
+  accelemeter.init();
+  Wire.begin();
+  TSL2561.init();
   Serial.begin(115200); // NEEDED FOR MOTORS
+  digitalWrite(relaycompass, HIGH);
+  delay(1000);
+  
+  if (!bno.begin())
+  {
+      Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+      while (1)
+        ;
+  }
+
+  calibrationData.accel_offset_x = 5;
+  calibrationData.accel_offset_y = 39;
+  calibrationData.accel_offset_z = -2;
+  calibrationData.gyro_offset_x = -5;
+  calibrationData.gyro_offset_y = -2;
+  calibrationData.gyro_offset_z = 0;
+  calibrationData.mag_offset_x = -33;
+  calibrationData.mag_offset_y = 298;
+  calibrationData.mag_offset_z = 430;
+  calibrationData.accel_radius = 1000;
+  calibrationData.mag_radius = 945;
+  bno.setSensorOffsets(calibrationData);
+  
   WiFi.begin(ssid, password);
 
   Serial.println("WIFI connecting");
@@ -112,7 +164,8 @@ void setup() {
 
   if (!ina260A.begin((uint8_t)64) || !ina260B.begin((uint8_t)68)) {
     Serial.println("Couldn't find all INA260 chips");
-    while (true);
+    while (true)
+      ;
   }
   Serial.println("Found INA260 chip");
   
@@ -120,7 +173,7 @@ void setup() {
   pinMode(motor1pin2, OUTPUT); // NEEDED FOR MOTORS
   pinMode(motor2pin1, OUTPUT); // NEEDED FOR MOTORS
   pinMode(motor2pin2, OUTPUT); // NEEDED FOR MOTORS
-  delay(1000); // NEEDED FOR MOTORS
+  delay(1500); // NEEDED FOR MOTORS
   Serial.println("Hi welcome to the solar flower!"); // NEEDED FOR MOTORS
 }
 
@@ -151,30 +204,36 @@ void loop()
     Elevation_Azimuth = GetElevationAndAzimuth(hour_int, minute_int, second_int, month_int, day_int, year_int, Lon, Lat);
     // NEEDED FOR MOTORS
     /*Serial.println("Type de \"Elevation\" you want!");
-    while(Serial.available() <= 0);
+    while(Serial.available() <= 0)
+      ;
     incomingCommand = Serial.readString();
     elevation = incomingCommand.toInt();*/
     // NEEDED FOR MOTORS
-    elevation = Elevation_Azimuth[0];
-    azimuth = Elevation_Azimuth[1];
-    float temp = (90 - elevation)/3.5; //The accelerometer has a step of 3.5 degrees
+    elevation = Elevation_Azimuth[0] + 6;
+    //elevation = test_elevation - 1;
+    Serial.println(test_elevation);
+    azimuth = (Elevation_Azimuth[1]+20)%360;
+    temp = (90 - elevation)/3.5; //The accelerometer has a step of 3.5 degrees
     elevation_corrected = -temp;
-    sun_to_low = temp < 17;
-    if(!sun_to_low && not_out_of_bounds)
+    if(temp < 30)
+    {
+      sun_to_low = true;
+    }
+    if(elevation < 30 && not_out_of_bounds)
     {
       not_out_of_bounds = false;
       Serial.println("Sun is under reach for the solar flower... (No electricity for you!)");
       delay(500);
       Serial.println("Going to sleep mode....");
     }
-    else if(not_out_of_bounds || !sun_to_low)
+    else if(not_out_of_bounds || elevation < 30)
     {
       not_out_of_bounds = true;
       Serial.print("Elevation (from user): ");
       Serial.println(elevation);
       Serial.print("Elevation (for correction): ");
       Serial.println(elevation_corrected);
-      accelerometer.getXYZ(&x, &y, &z); 
+      accelemeter.getXYZ(&x, &y, &z); 
     }
     else
     {
@@ -184,43 +243,79 @@ void loop()
   }
   
   // TESTING IF NEW DATA IS NOT THE SAME AS THE OLD DATA
-  if(!(elevation_int == elevation && azimuth_int == azimuth) || x < elevation_corrected - 1 || x > elevation_corrected + 1)
+  if(!(elevation_int == elevation && azimuth_int == azimuth) || x != elevation_corrected || angleTowardsNorth < azimuth + 1 || angleTowardsNorth > azimuth - 1)
   {
     elevation_int = elevation;
     azimuth_int = azimuth;
-    while(x != elevation_corrected && not_out_of_bounds)
+    if(!(elevation < 30) && (x != elevation_corrected && not_out_of_bounds))
     {
       Serial.println(x);
       Serial.println(elevation_corrected);
+      Serial.println(sun_to_low);
       if(x <= elevation_corrected)
       {
         digitalWrite(motor1pin1, HIGH);
         digitalWrite(motor1pin2, LOW);
-        digitalWrite(motor2pin1, LOW);
-        digitalWrite(motor2pin2, LOW);
       }
       else
       {
         digitalWrite(motor1pin1, LOW);
         digitalWrite(motor1pin2, HIGH);
-        digitalWrite(motor2pin1, LOW);
-        digitalWrite(motor2pin2, LOW);
       }
       delay(100);
       digitalWrite(motor1pin1, LOW);  // NEEDED FOR MOTORS
       digitalWrite(motor1pin2, LOW);  // NEEDED FOR MOTORS
+      accelemeter.getXYZ(&x, &y, &z); 
+   }
+   if(angleTowardsNorth < azimuth - 3 || angleTowardsNorth > azimuth + 3)
+    {
+      rotating = true;
+      Serial.println(angleTowardsNorth);
+      Serial.println(azimuth);
+      if(angleTowardsNorth < azimuth)
+      {
+        digitalWrite(motor2pin1, HIGH);
+        digitalWrite(motor2pin2, LOW);
+      }
+      else
+      {
+        digitalWrite(motor2pin1, LOW);
+        digitalWrite(motor2pin2, HIGH);
+      }
+      delay(100);
+   } else
+   {
+      rotating = false;
       digitalWrite(motor2pin1, LOW);  // NEEDED FOR MOTORS
       digitalWrite(motor2pin2, LOW);  // NEEDED FOR MOTORS
-      accelerometer.getXYZ(&x, &y, &z); 
    }
+  }
+  else
+  {
+    rotating = false;
+    digitalWrite(motor2pin1, LOW);  // NEEDED FOR MOTORS
+    digitalWrite(motor2pin2, LOW);  // NEEDED FOR MOTORS
   }
 
   // SENDING DATA TO ADAFRUIT EVERY 20 SECONDS
   if((millis() - previousTimeAda) > adaDelay)
   {
+    rotating = false;
+    digitalWrite(motor1pin1, LOW);  // NEEDED FOR MOTORS
+    digitalWrite(motor1pin2, LOW);  // NEEDED FOR MOTORS
+    digitalWrite(motor2pin1, LOW);  // NEEDED FOR MOTORS
+    digitalWrite(motor2pin2, LOW);  // NEEDED FOR MOTORS
+    
+      while (! Serial);
+    Serial.print("Connecting to Adafruit IO");
+    // connect to io.adafruit.com
+    io.connect();
+  
+    while (io.status() < AIO_CONNECTED)
+      yield();
     Serial.println("SENDING TO ADAFRUIT");
     float* temp_values = getPower(&ina260A, &ina260B);
-    sendToAdafruit(elevation, azimuth, temp_values[0], temp_values[1], temp_values[2], temp_values[3], temp_values[4], temp_values[5], 0);
+    sendToAdafruit(elevation, azimuth, temp_values[0], temp_values[1], temp_values[2], temp_values[3], temp_values[4], temp_values[5], getLux(), Lon/DEG_TO_RAD, Lat/DEG_TO_RAD);
     previousTimeAda = millis();
   }
 
@@ -242,4 +337,69 @@ void loop()
     }
     previousTimeSecond = millis(); 
   }
+
+
+  if((millis() - previousTimeCompass) > compassDelay)
+  {
+    angleTowardsNorth = fabs(compass()%360);
+    if(rotating)
+    {
+      compassValues[indexCompass] = angleTowardsNorth;
+      if(indexCompass >= (sizeof(compassValues)/2) - 2)
+      {
+        indexCompass = 0;
+        memset(compassValues, 0, sizeof(compassValues));
+      }
+      else
+      {
+        indexCompass++;
+      }
+      inIf = false;
+      for(int i = 0; i < (sizeof(compassValues)/2) - 2;i++)
+      {
+        if(compassValues[i] != compassValues[i+1])
+        {
+          inIf = true;
+          toMuchTheSame = false;
+        }
+      }
+      if(!inIf)
+        toMuchTheSame = true;
+      if(toMuchTheSame)
+        CHRASHED = true;
+    }
+    previousTimeCompass = millis(); 
+  }
+
+
+if(CHRASHED || START)
+  {
+    digitalWrite(motor1pin1, LOW);  // NEEDED FOR MOTORS
+    digitalWrite(motor1pin2, LOW);  // NEEDED FOR MOTORS
+    digitalWrite(motor2pin1, LOW);  // NEEDED FOR MOTORS
+    digitalWrite(motor2pin2, LOW);  // NEEDED FOR MOTORS
+    
+    Serial.println("SWITCHING RELAY");
+    digitalWrite(relaycompass, LOW);
+    delay (1000);
+    digitalWrite(relaycompass, HIGH);
+    delay (2500);
+    previousTimerelay = millis();
+  }
+  START = false;
+
+  
+
+/*if (!bno.begin()) {
+    Serial.println("Couldn't find all INA260 chips");
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+      digitalWrite(relaycompass, LOW);
+      delay (1000);
+      digitalWrite(relaycompass, HIGH);
+      delay (1500);
+    while (true)
+      ;
+  }
+*/
+  
 }
