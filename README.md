@@ -41,4 +41,4 @@ Met de stroomspanningsmeter ([INA260](./img/Meter.PNG)) zien we wat voor stroom 
 
 Dit is ons eindproject.
 
-![Foto project]()
+![Eindproject](./img/SunnySmiley.gif)
