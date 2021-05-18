@@ -11,25 +11,25 @@
           Robin, Dieter: Uittesten motoren met H-brug + programmeren van Arduino met H-brug en bedraden van componenten op het project  
           Timon: Aansluiten zonnepanelen op Sunny Buddy om batterij op te laden + bestellen van nieuwe Lux sensor want stuurde andere waarde door + maken van website om sensor waarden door te sturen en mooi weer te geven  
           Maxim: Presentatie maken voor 30/04: Presenting Proof of Concept  
-* 30-04 : Presentatie over ons project: welke componenten we gebruikt hebben -> gekozen voor Adafruit dashboard die we met ESP doorsturen omdat de website geen succes was.    
+* 30-04 : Presentatie over ons project: welke componenten we gebruikt hebben -> gekozen voor Adafruit dashboard die we met ESP          doorsturen omdat de website geen succes was.  
           Robin: Programmeren ESP -> aanmaken Adafruit dashboard om sensorwaarden weer te geven + uittesten accelerometer  
           Dieter: Uittesten van digitaal kompas en GPS-module  
           Timon: Uittesten lux sensor op Arduino UNO  
           Timon, Dieter: spanning-stroom meter op de zonnenpanelen met Arduino  
-          Maxim: ...  
+          Maxim: Extra hulp
 * 02-04 : Timon : bekijken digitaal kompas om dit automatisch naar het Noorden te laten wijzen  
 * 07-05 : Gezamenlijk werken aan project  
           Robin, Timon: Aansluiten wifi van labo op project en via voeding van powerbank bekijken als de sensor waarden worden doorgestuurd en hoeveel stroom de zonnepanelen   leveren  
           Timon: Testen om data te schrijven naar EEPROM (later niet gedaan omdat het niet lukte)  
           Dieter: Testen op digitaal kompas aan de hand van de registers om het te callibreren + afwerken bedrading + programma's van sensoren implementeren in eindprogramma.  
-          Maxim: ...  
+          Maxim: Updaten GitHub
 * 8-05 :  Dieter: Verder testen uitgevoerd op het compass. Op het einde van de dag een offset gemaakt die werkte bij mij thuis.
 * 9-05 :  Robin, Dieter: Opstelling testen met labo voeding omdat de batterij gesneuveld was. Gezien dat het niet meer werkte.
 * 10-05 : Presenteren finaal project  
           Dieter, Robin: offset digitaal kompas opnieuw berekent in lokaal. Hier gezien dat we het compass moeten callibreren op elke nieuwe locatie.  
           Dieter, Robin: 's avonds testen uitgevoerd om compass te calibreren bij Robin thuis. Met de bedoeling om het te filmen.  
           Timon: Aanmaken README en logboek voor project  
-          Maxim: ...  
+          Maxim: Programma's op GitHub plaatsen  
 * 11-05 : Testen om demo te filmen  
           Robin: Demo proberen te filmen. (was gelukt voor 4 uur). Hierna liep compass vast waardoor we reset hebben verzonnen.  
           Robin: Eerste testen uitgevoerd om compass aan en uit te zetten via relais contact.  
