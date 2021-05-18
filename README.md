@@ -31,11 +31,9 @@ Bij onze zonnepanelen sluiten we allerlei sensoren aan, deze data visualeren we 
 Om de data door te sturen maken we gebruik van een ESP ([ESP8266](./img/ESP.PNG)) die een wifi module bevat die dit doorstuurd naar Adafruit.
 Hierdoor kunnen we op afstand via een GSM, computer, ... volgen in welke toestand de zonnepanelen zich bevinden.
 
-![Foto Adafruit dashboard]()
-
 Met de GPS module ([Groove GPS module](./img/GPS)) bepalen we de longitude en latitude om de locatie te bepalen. Die we vervolgens in google maps kunnen weergeven op Adafruit
 
-![Foto google maps Adafruit]()
+![Foto Adafruit dashboard](./img/adafruit_dashboard.png)
 
 Met de stroomspanningsmeter ([INA260](./img/Meter.PNG)) zien we wat voor stroom en spanning de zonnepanelen leveren. Hieruit halen we ook het vermogen (P = U*I).
 
